@@ -1,5 +1,31 @@
 import log4js from 'log4js';
 
+// Custom layout para Argentina timezone
+log4js.addLayout('custom-tz', () => {
+  return (loggingEvent) => {
+    const date = new Date(loggingEvent.startTime);
+    const formatter = new Intl.DateTimeFormat('es-AR', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false,
+      timeZone: 'America/Buenos_Aires',
+    });
+    
+    const parts = formatter.formatToParts(date);
+    const dateObj = Object.fromEntries(parts.map(p => [p.type, p.value]));
+    
+    const timestamp = `${dateObj.year}-${dateObj.month}-${dateObj.day} ${dateObj.hour}:${dateObj.minute}:${dateObj.second}.${loggingEvent.startTime.getMilliseconds().toString().padStart(3, '0')}`;
+    const level = loggingEvent.level.toString();
+    const message = loggingEvent.data.join(' ');
+    
+    return `[${timestamp}] [${level}] ${message}`;
+  };
+});
+
 class Logger {
   private static instance: Logger;
   private logger: log4js.Logger;
@@ -10,16 +36,14 @@ class Logger {
         console: {
           type: 'console',
           layout: {
-            type: 'pattern',
-            pattern: '[%d{yyyy-MM-dd hh:mm:ss.SSS}] [%p] %m',
+            type: 'custom-tz',
           },
         },
         file: {
           type: 'file',
           filename: 'logs/app.log',
           layout: {
-            type: 'pattern',
-            pattern: '[%d{yyyy-MM-dd hh:mm:ss.SSS}] [%p] %m',
+            type: 'custom-tz',
           },
         },
       },

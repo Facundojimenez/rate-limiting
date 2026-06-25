@@ -5,11 +5,6 @@ services:
     ports:
       - "${REDIS_PORT:-6379}:6379"
     restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
 
   backend:
     build:
@@ -26,12 +21,6 @@ services:
       - ./packages/backend/tsconfig.json:/app/tsconfig.json
     command: npm run dev:watch
     restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000"]
-      interval: 15s
-      timeout: 10s
-      retries: 10
-      start_period: 30s
 
   rate-limiter:
     build:
@@ -54,8 +43,6 @@ services:
       - ./packages/rate-limiter/tsconfig.json:/app/tsconfig.json
     command: npm run dev:watch
     depends_on:
-      redis:
-        condition: service_healthy
-      backend:
-        condition: service_healthy
+      - redis
+      - backend
     restart: unless-stopped

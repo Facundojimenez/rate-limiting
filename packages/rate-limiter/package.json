@@ -6,7 +6,30 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "dev": "ts-node src/index.ts",
-    "dev:watch": "nodemon --exec ts-node src/index.ts"
+    "dev:watch": "nodemon --exec ts-node src/index.ts",
+    "test": "jest --config jest.config.js --coverage"
+  },
+  "jest": {
+    "preset": "ts-jest",
+    "testEnvironment": "node",
+    "roots": ["<rootDir>/_test_"],
+    "globals": {
+      "ts-jest": {
+        "tsconfig": "tsconfig.test.json"
+      }
+    },
+    "collectCoverageFrom": [
+      "src/services/**/*.ts",
+      "src/middleware/**/*.ts",
+      "src/utils/**/*.ts",
+      "src/routes/**/*.ts",
+      "src/app.ts"
+    ],
+    "coverageThreshold": {
+      "global": {
+        "lines": 90
+      }
+    }
   },
   "dependencies": {
     "axios": "^1.7.2",
