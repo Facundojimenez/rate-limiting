@@ -1,0 +1,51 @@
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./packages/backend
+      dockerfile: Dockerfile
+    container_name: backend
+    ports:
+      - "${BACKEND_PORT:-3000}:3000"
+    environment:
+      - PORT=3000
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  rate-limiter:
+    build:
+      context: ./packages/rate-limiter
+      dockerfile: Dockerfile
+    container_name: rate-limiter
+    ports:
+      - "${RATE_LIMITER_PORT:-4000}:4000"
+    environment:
+      - PORT=4000
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - BACKEND_URL=http://backend:3000
+      - INSERT_MAX_REQUESTS=${INSERT_MAX_REQUESTS:-5}
+      - INSERT_WINDOW_SECONDS=${INSERT_WINDOW_SECONDS:-60}
+      - UPDATE_MAX_REQUESTS=${UPDATE_MAX_REQUESTS:-10}
+      - UPDATE_WINDOW_SECONDS=${UPDATE_WINDOW_SECONDS:-60}
+    depends_on:
+      redis:
+        condition: service_healthy
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
