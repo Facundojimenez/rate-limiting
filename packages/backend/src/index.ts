@@ -1,8 +1,9 @@
 import 'dotenv/config';
 import app from './app';
+import logger from './utils/logger';
 
 const PORT = process.env.PORT ?? 3000;
 
 app.listen(PORT, () => {
-  console.log(`Backend service running on port ${PORT}`);
+  logger.info(`Backend service running on port ${PORT}`);
 });

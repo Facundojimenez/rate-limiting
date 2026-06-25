@@ -54,7 +54,7 @@ desafio_rate_limitting_iol/
 | Method | Path               | Description           |
 |--------|--------------------|-----------------------|
 | POST   | `/payments/insert` | Creates a new payment |
-| POST   | `/payments/update` | Updates a payment     |
+| POST   | `/payments/get`    | Retrieves payments    |
 
 ### Rate Limiter (`packages/rate-limiter`)
 
@@ -63,7 +63,7 @@ Exposes the same routes as the backend. Applies rate limiting before proxying:
 | Route                   | Default Limit              |
 |-------------------------|----------------------------|
 | `POST /payments/insert` | 5 requests / 60s per user  |
-| `POST /payments/update` | 10 requests / 60s per user |
+| `POST /payments/get`    | 10 requests / 60s per user |
 
 The `userId` field must be present in every request body to identify the caller.
 
@@ -113,8 +113,8 @@ Copy `.env.example` to `.env` to customize the configuration:
 | `REDIS_PORT`            | `6379`  | Host port for Redis                     |
 | `INSERT_MAX_REQUESTS`   | `5`     | Max requests for `/payments/insert`     |
 | `INSERT_WINDOW_SECONDS` | `60`    | Window size (seconds) for insert        |
-| `UPDATE_MAX_REQUESTS`   | `10`    | Max requests for `/payments/update`     |
-| `UPDATE_WINDOW_SECONDS` | `60`    | Window size (seconds) for update        |
+| `GET_MAX_REQUESTS`      | `10`    | Max requests for `/payments/get`        |
+| `GET_WINDOW_SECONDS`    | `60`    | Window size (seconds) for fetching      |
 
 ## Example Requests
 
@@ -125,9 +125,11 @@ curl -X POST http://localhost:4000/payments/insert \
   -d '{"userId": "user-123", "amount": 100, "currency": "ARS"}'
 ```
 
-**Update a payment:**
+**Get payments:**
 ```bash
-curl -X POST http://localhost:4000/payments/update \
-  -H "Content-Type: application/json" \
-  -d '{"userId": "user-123", "paymentId": "some-uuid", "status": "completed"}'
+curl --location --request GET 'http://localhost:4000/payments/get' \
+--header 'Content-Type: application/json' \
+  --data '{
+    "userId": "user-123"
+  }'
 ```

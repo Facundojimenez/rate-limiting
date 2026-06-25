@@ -1,9 +1,10 @@
-import { randomUUID } from 'crypto';
 import redisClient from '../redis/client';
+import logger from '../utils/logger';
 
 interface CheckRateLimitParams {
   userId: string;
   resource: string;
+  httpMethod: string;
   maxRequests: number;
   windowSizeInSeconds: number;
 }
@@ -17,25 +18,26 @@ interface RateLimitResult {
 export const checkRateLimit = async ({
   userId,
   resource,
+  httpMethod,
   maxRequests,
   windowSizeInSeconds,
 }: CheckRateLimitParams): Promise<RateLimitResult> => {
-  const key = `rate_limit:${resource}:${userId}`;
-  const now = Date.now();
-  const windowStart = now - windowSizeInSeconds * 1000;
-  const member = `${now}-${randomUUID()}`;
+  const key = `rate_limit:${httpMethod}:${resource}:${userId}`;
 
-  const pipeline = redisClient.pipeline();
-  pipeline.zremrangebyscore(key, '-inf', windowStart);
-  pipeline.zadd(key, now, member);
-  pipeline.zcard(key);
-  pipeline.expire(key, windowSizeInSeconds);
+  logger.info(`[RATE_LIMIT] START - userId: ${userId}, resource: ${resource}, maxRequests: ${maxRequests}, windowSize: ${windowSizeInSeconds}s`);
 
-  const results = await pipeline.exec();
+  //Se inserta el elemento en Redis si no existe la key, y luego se incrementa el contador.
+  const currentCount = await redisClient.incr(key);
 
-  const currentCount = (results?.[2]?.[1] as number) ?? 0;
-  const remaining = Math.max(0, maxRequests - currentCount);
-  const allowed = currentCount <= maxRequests;
-
+  //Si es la primera vez que se inserta el elemento, se establece el tiempo de expiración.
+  if (currentCount === 1) {
+    await redisClient.expire(key, windowSizeInSeconds);
+  }
+  
+  const allowed: boolean = currentCount <= maxRequests;
+  const remaining: number = Math.max(0, maxRequests - currentCount);
+  
+  logger.info(`[RATE_LIMIT] RESULT - allowed: ${allowed}, remaining: ${remaining}, count: ${currentCount}`);
+  
   return { allowed, remaining, currentCount };
 };

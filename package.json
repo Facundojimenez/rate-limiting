@@ -8,5 +8,9 @@
   "scripts": {
     "dev": "docker-compose up --build",
     "down": "docker-compose down"
+  },
+  "dependencies": {
+    "http-status-codes": "^2.3.0",
+    "log4js": "^6.9.1"
   }
 }

@@ -1,18 +1,8 @@
 import { randomUUID } from 'crypto';
+import { InsertPaymentDto } from '../dtos/insertPayment.dto';
+import { mockPayments } from '../mocks/payments.mock';
 
-interface InsertPaymentInput {
-  userId: string;
-  amount: number;
-  currency: string;
-}
-
-interface UpdatePaymentInput {
-  userId: string;
-  paymentId: string;
-  status: string;
-}
-
-export const insert = ({ userId, amount, currency }: InsertPaymentInput) => {
+export const insertPayment = ({ userId, amount, currency }: InsertPaymentDto) => {
   return {
     paymentId: randomUUID(),
     userId,
@@ -23,11 +13,6 @@ export const insert = ({ userId, amount, currency }: InsertPaymentInput) => {
   };
 };
 
-export const update = ({ userId, paymentId, status }: UpdatePaymentInput) => {
-  return {
-    paymentId,
-    userId,
-    status,
-    updatedAt: new Date().toISOString(),
-  };
+export const getPayments = () => {
+  return mockPayments;
 };

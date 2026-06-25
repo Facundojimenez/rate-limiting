@@ -1,22 +1,15 @@
 import { Request, Response } from 'express';
-import { insert, update } from '../services/payment.service';
+import { InsertPaymentDto } from '../dtos/insertPayment.dto';
+import * as PaymentsService from '../services/payment.service';
 
-export const insertPayment = (req: Request, res: Response): void => {
-  const { userId, amount, currency } = req.body as {
-    userId: string;
-    amount: number;
-    currency: string;
-  };
-  const result = insert({ userId, amount, currency });
+export const insertPaymentController = (req: Request, res: Response) => {
+  const body = req.body as InsertPaymentDto;
+
+  const result = PaymentsService.insertPayment(body);
   res.status(201).json(result);
 };
 
-export const updatePayment = (req: Request, res: Response): void => {
-  const { userId, paymentId, status } = req.body as {
-    userId: string;
-    paymentId: string;
-    status: string;
-  };
-  const result = update({ userId, paymentId, status });
+export const getPaymentsController = (req: Request, res: Response) => {
+  const result = PaymentsService.getPayments();
   res.status(200).json(result);
 };

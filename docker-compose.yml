@@ -14,23 +14,29 @@ services:
   backend:
     build:
       context: ./packages/backend
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.dev
     container_name: backend
     ports:
       - "${BACKEND_PORT:-3000}:3000"
     environment:
       - PORT=3000
+      - NODE_ENV=development
+    volumes:
+      - ./packages/backend/src:/app/src
+      - ./packages/backend/tsconfig.json:/app/tsconfig.json
+    command: npm run dev:watch
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
 
   rate-limiter:
     build:
       context: ./packages/rate-limiter
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.dev
     container_name: rate-limiter
     ports:
       - "${RATE_LIMITER_PORT:-4000}:4000"
@@ -41,8 +47,12 @@ services:
       - BACKEND_URL=http://backend:3000
       - INSERT_MAX_REQUESTS=${INSERT_MAX_REQUESTS:-5}
       - INSERT_WINDOW_SECONDS=${INSERT_WINDOW_SECONDS:-60}
-      - UPDATE_MAX_REQUESTS=${UPDATE_MAX_REQUESTS:-10}
-      - UPDATE_WINDOW_SECONDS=${UPDATE_WINDOW_SECONDS:-60}
+      - GET_MAX_REQUESTS=${GET_MAX_REQUESTS:-10}
+      - GET_WINDOW_SECONDS=${GET_WINDOW_SECONDS:-60}
+    volumes:
+      - ./packages/rate-limiter/src:/app/src
+      - ./packages/rate-limiter/tsconfig.json:/app/tsconfig.json
+    command: npm run dev:watch
     depends_on:
       redis:
         condition: service_healthy
