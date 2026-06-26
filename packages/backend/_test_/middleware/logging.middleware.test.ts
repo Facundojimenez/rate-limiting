@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
+import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import loggingMiddleware from '../../src/middleware/logging.middleware';
 import logger from '../../src/utils/logger';
 
@@ -23,7 +24,7 @@ const buildRes = (): Response => {
 };
 
 describe('loggingMiddleware', () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(async () => jest.clearAllMocks());
 
   it('returns a function (RequestHandler)', () => {
     expect(typeof loggingMiddleware()).toBe('function');

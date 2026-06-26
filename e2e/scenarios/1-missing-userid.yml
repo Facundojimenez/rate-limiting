@@ -1,0 +1,36 @@
+config:
+  target: "{{ $env.TARGET }}"
+  plugins:
+    expect: {}
+  phases:
+    - name: "missing-userid-test"
+      duration: 5
+      arrivalCount: 2  # 1 VU para GET, 1 VU para POST
+
+scenarios:
+  # Caso: GET sin userId en el body → el rate limiter debe responder 400
+  - name: "GET sin userId → 400 Bad Request"
+    weight: 1
+    flow:
+      - get:
+          url: "/rate-limited-payments"
+          # No se envía userId en el body a propósito
+          expect:
+            - statusCode: 400
+            - contentType: json
+            - hasProperty: "error"
+
+  # Caso: POST sin userId en el body → el rate limiter debe responder 400
+  - name: "POST sin userId → 400 Bad Request"
+    weight: 1
+    flow:
+      - post:
+          url: "/rate-limited-payments"
+          json:
+            amount: 100
+            currency: "USD"
+          # No se envía userId en el body a propósito
+          expect:
+            - statusCode: 400
+            - contentType: json
+            - hasProperty: "error"

@@ -14,10 +14,11 @@ const rateLimiter = (resourceKey: string): RequestHandler => {
       return;
     }
 
-    const { userId } = req.body as { userId?: string };
-
+    // El UserId se obtiene de los query params para simplificar este ejemplo, pero en un caso real deberia obtenerse de un token JWT o de la sesión del usuario.
+    const userId: string = req.query.userId as string;
+    
     if (!userId) {
-      res.status(StatusCodes.BAD_REQUEST).json({ error: 'userId is required in the request body' });
+      res.status(StatusCodes.BAD_REQUEST).json({ error: 'userId is required in the query params' });
       return;
     }
 

@@ -3,7 +3,7 @@ import { insertPaymentController, getPaymentsController } from '../controllers/p
 
 const router = Router();
 
-router.post('/insert', insertPaymentController);
-router.get('/get', getPaymentsController);
+router.post('/', insertPaymentController);
+router.get('/', getPaymentsController);
 
 export default router;

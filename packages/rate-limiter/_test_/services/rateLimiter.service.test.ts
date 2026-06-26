@@ -1,6 +1,7 @@
 import { checkRateLimit } from '../../src/services/rateLimiter.service';
 import redisClient from '../../src/redis/client';
 import logger from '../../src/utils/logger';
+import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 
 jest.mock('../../src/redis/client', () => ({
   incr: jest.fn(),
@@ -24,7 +25,7 @@ const baseParams = {
 };
 
 describe('checkRateLimit', () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(async () => jest.clearAllMocks());
 
   it('returns allowed=true and correct remaining when under limit', async () => {
     mockRedis.incr.mockResolvedValue(3);

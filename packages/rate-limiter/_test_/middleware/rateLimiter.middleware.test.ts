@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
+import { afterEach, describe, expect, it, jest } from '@jest/globals';
 import { StatusCodes } from 'http-status-codes';
 import rateLimiter from '../../src/middleware/rateLimiter.middleware';
 import * as rateLimiterService from '../../src/services/rateLimiter.service';
@@ -17,21 +18,21 @@ const mockCheckRateLimit = rateLimiterService.checkRateLimit as jest.MockedFunct
   typeof rateLimiterService.checkRateLimit
 >;
 
-const buildReq = (body: object = {}): Request => ({ body } as Request);
+const buildReq = (body: object = {}, query: object = {}): Request => ({ body, query } as unknown as Request);
 
 const buildRes = (): Response => {
   const res = {} as Response;
-  res.status = jest.fn().mockReturnValue(res);
-  res.json = jest.fn().mockReturnValue(res);
-  res.setHeader = jest.fn();
+  res.status = jest.fn().mockReturnValue(res) as unknown as any;
+  res.json = jest.fn().mockReturnValue(res) as unknown as any;
+  res.setHeader = jest.fn() as unknown as any;
   return res;
 };
 
 describe('rateLimiter middleware', () => {
-  afterEach(() => jest.clearAllMocks());
+  afterEach(async () => jest.clearAllMocks());
 
   it('calls next() when no rule is found for the resource key', async () => {
-    const req = buildReq({ userId: 'u1' });
+    const req = buildReq({}, { userId: 'u1' });
     const res = buildRes();
     const next: NextFunction = jest.fn();
 
@@ -42,20 +43,20 @@ describe('rateLimiter middleware', () => {
   });
 
   it('returns 400 when userId is missing from the body', async () => {
-    const req = buildReq({});
+    const req = buildReq({}, {});
     const res = buildRes();
     const next: NextFunction = jest.fn();
 
     await rateLimiter('payments/insert')(req, res, next);
 
     expect(res.status).toHaveBeenCalledWith(StatusCodes.BAD_REQUEST);
-    expect(res.json).toHaveBeenCalledWith({ error: 'userId is required in the request body' });
+    expect(res.json).toHaveBeenCalledWith({ error: 'userId is required in the query params' });
     expect(next).not.toHaveBeenCalled();
   });
 
   it('calls next() and sets rate limit headers when request is allowed', async () => {
     mockCheckRateLimit.mockResolvedValue({ allowed: true, remaining: 4, currentCount: 1 });
-    const req = buildReq({ userId: 'u1', amount: 100, currency: 'USD' });
+    const req = buildReq({ amount: 100, currency: 'USD' }, { userId: 'u1' });
     const res = buildRes();
     const next: NextFunction = jest.fn();
 
@@ -67,7 +68,7 @@ describe('rateLimiter middleware', () => {
 
   it('returns 429 and does not call next() when rate limit is exceeded', async () => {
     mockCheckRateLimit.mockResolvedValue({ allowed: false, remaining: 0, currentCount: 6 });
-    const req = buildReq({ userId: 'u1', amount: 100, currency: 'USD' });
+    const req = buildReq({ amount: 100, currency: 'USD' }, { userId: 'u1' });
     const res = buildRes();
     const next: NextFunction = jest.fn();
 
@@ -82,7 +83,7 @@ describe('rateLimiter middleware', () => {
 
   it('sets all three rate limit headers on an allowed request', async () => {
     mockCheckRateLimit.mockResolvedValue({ allowed: true, remaining: 9, currentCount: 1 });
-    const req = buildReq({ userId: 'u2' });
+    const req = buildReq({}, { userId: 'u2' });
     const res = buildRes();
     const next: NextFunction = jest.fn();
 
@@ -95,7 +96,7 @@ describe('rateLimiter middleware', () => {
 
   it('calls checkRateLimit with the correct parameters', async () => {
     mockCheckRateLimit.mockResolvedValue({ allowed: true, remaining: 4, currentCount: 1 });
-    const req = buildReq({ userId: 'u3', amount: 50, currency: 'ARS' });
+    const req = buildReq({ amount: 50, currency: 'ARS' }, { userId: 'u3' });
     const res = buildRes();
     const next: NextFunction = jest.fn();
 
@@ -113,7 +114,7 @@ describe('rateLimiter middleware', () => {
   it('logs a warning when the rate limit is exceeded', async () => {
     mockCheckRateLimit.mockResolvedValue({ allowed: false, remaining: 0, currentCount: 6 });
     const mockLogger = logger as jest.Mocked<typeof logger>;
-    const req = buildReq({ userId: 'u1' });
+    const req = buildReq({}, { userId: 'u1' });
     const res = buildRes();
     const next: NextFunction = jest.fn();
 

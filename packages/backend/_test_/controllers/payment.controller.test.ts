@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import { afterEach, describe, expect, it, jest } from '@jest/globals';
 import { insertPaymentController, getPaymentsController } from '../../src/controllers/payment.controller';
 import * as PaymentsService from '../../src/services/payment.service';
 
@@ -9,13 +10,13 @@ const mockGetPayments = PaymentsService.getPayments as jest.MockedFunction<typeo
 
 const mockRes = () => {
   const res = {} as Response;
-  res.status = jest.fn().mockReturnValue(res);
-  res.json = jest.fn().mockReturnValue(res);
+  res.status = jest.fn().mockReturnValue(res) as unknown as any;
+  res.json = jest.fn().mockReturnValue(res) as unknown as any;
   return res;
 };
 
 describe('PaymentController', () => {
-  afterEach(() => jest.clearAllMocks());
+  afterEach(async () => jest.clearAllMocks());
 
   describe('insertPaymentController', () => {
     it('calls insertPayment with the request body and responds with 201', () => {

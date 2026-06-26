@@ -1,135 +1,109 @@
-# Rate Limiter Monorepo
+# Rate Limiter
 
-A monorepo containing two TypeScript services:
+Este proyecto tiene dos servicios en TypeScript:
 
-- **backend**: A mock Express.js API with payment endpoints.
-- **rate-limiter**: An Express.js reverse proxy that enforces per-user rate limits using a Sliding Window algorithm backed by Redis.
+- **backend**: una API simple con datos mock para probar el flujo completo.
+- **rate-limiter**: un proxy reverse que protege las peticiones con Redis y limita el tráfico por usuario.
 
-## Architecture
+## Arquitectura
 
-```
-Client → rate-limiter (:4000) → backend (:3000)
-                   ↕
-                 Redis
-```
-
-All incoming requests should target the **rate-limiter** service. It validates rate limits and, if allowed, forwards the request to the backend.
-
-## Project Structure
-
-```
-desafio_rate_limitting_iol/
-├── docker-compose.yml
-├── .env.example
-├── .gitignore
-├── README.md
-├── package.json
-└── packages/
-    ├── backend/
-    │   ├── Dockerfile
-    │   ├── tsconfig.json
-    │   └── src/
-    │       ├── index.ts
-    │       ├── app.ts
-    │       ├── routes/payment.routes.ts
-    │       ├── controllers/payment.controller.ts
-    │       └── services/payment.service.ts
-    └── rate-limiter/
-        ├── Dockerfile
-        ├── tsconfig.json
-        └── src/
-            ├── index.ts
-            ├── app.ts
-            ├── config/rules.ts
-            ├── redis/client.ts
-            ├── middleware/rateLimiter.middleware.ts
-            ├── services/rateLimiter.service.ts
-            └── routes/proxy.routes.ts
+```text
+Cliente → rate-limiter → backend
+           ↕
+         Redis
 ```
 
-## Services
+Las peticiones deberían pasar siempre por el rate limiter primero. Allí se valida si el usuario sigue dentro del límite permitido y, si corresponde, se reenvían al backend.
 
-### Backend (`packages/backend`)
+## Servicios
 
-| Method | Path               | Description           |
-|--------|--------------------|-----------------------|
-| POST   | `/payments/insert` | Creates a new payment |
-| POST   | `/payments/get`    | Retrieves payments    |
+### Backend
 
-### Rate Limiter (`packages/rate-limiter`)
+El backend expone una API mínima para probar el funcionamiento del limitador:
 
-Exposes the same routes as the backend. Applies rate limiting before proxying:
+| Método | Ruta | Descripción |
+| ------ | ---- | ----------- |
+| POST | `/payments` | Crea un pago |
+| GET | `/payments` | Obtiene los pagos |
 
-| Route                   | Default Limit              |
-|-------------------------|----------------------------|
-| `POST /payments/insert` | 5 requests / 60s per user  |
-| `POST /payments/get`    | 10 requests / 60s per user |
+### Rate limiter
 
-The `userId` field must be present in every request body to identify the caller.
+El rate limiter expone las mismas rutas y aplica los límites antes de redirigir la solicitud al backend.
 
-### Rate Limit Response Headers
+| Ruta | Límite por defecto |
+| ---- | ------------------ |
+| `POST /payments` | 5 requests por 60s por usuario |
+| `GET /payments` | 10 requests por 60s por usuario |
 
-Every response from the rate-limiter includes:
+En este ejemplo, el `userId` se toma desde los query params, por ejemplo `?userId=user-123`. En un sistema real, eso debería venir de un JWT o de la sesión del usuario.
 
-| Header                  | Description                              |
-|-------------------------|------------------------------------------|
-| `X-RateLimit-Limit`     | Maximum requests allowed in the window   |
-| `X-RateLimit-Remaining` | Remaining requests in the current window |
-| `X-RateLimit-Window`    | Window duration in seconds               |
+### Headers de respuesta
 
-When the limit is exceeded, the service responds with `429 Too Many Requests`.
+Cada respuesta del rate limiter incluye los siguientes headers:
 
-## Sliding Window Algorithm
+| Header | Descripción |
+| ------ | ----------- |
+| `X-RateLimit-Limit` | Máximo de requests permitidos en la ventana |
+| `X-RateLimit-Remaining` | Requests restantes en la ventana actual |
+| `X-RateLimit-Window` | Tamaño de la ventana en segundos |
 
-The rate limiter uses a **Sliding Window** algorithm implemented with a Redis Sorted Set:
+Si el límite se excede, el servicio responde con `429 Too Many Requests`.
 
-1. Each request is stored as a unique member (`timestamp-UUID`) with its timestamp as the score.
-2. On every request, entries older than the current window are removed atomically.
-3. The number of remaining members (via `ZCARD`) determines whether the request is within the allowed limit.
-4. All Redis operations run inside a single pipeline for atomicity.
+## Algoritmo
 
-## Getting Started
+La implementación usa un algoritmo de **Fixed Window**.
 
-### Prerequisites
+Cada request incrementa un contador en Redis usando una clave que combina:
 
-- [Docker](https://www.docker.com/) and [Docker Compose](https://docs.docker.com/compose/)
+- el método HTTP,
+- el recurso,
+- y el user ID.
 
-### Running the full stack
+Si es la primera solicitud de la ventana, se asigna una expiración a esa clave. Cuando el contador supera el máximo configurado, la petición queda rechazada hasta que la ventana se reinicia.
+
+Es un enfoque simple y liviano, pero tiene un tradeoff claro: cerca del cambio de ventana puede haber pequeñas ráfagas de requests más altas de lo ideal.
+
+## Cómo correrlo
+
+### Requisitos
+
+- Docker
+- Docker Compose
+
+### Levantar el stack
 
 ```bash
-docker-compose up --build
+docker compose up --build
 ```
 
-This command builds both TypeScript services (compiling TS → JS inside Docker) and starts Redis, backend, and rate-limiter.
+Eso levanta Redis, el backend y el rate limiter usando la configuración del archivo `.env` en la raíz del proyecto.
 
-### Environment Variables
+### Variables de entorno
 
-Copy `.env.example` to `.env` to customize the configuration:
+El stack lee la configuración desde el archivo `.env` de la raíz. Las principales son:
 
-| Variable                | Default | Description                             |
-|-------------------------|---------|-----------------------------------------|
-| `BACKEND_PORT`          | `3000`  | Host port for the backend service       |
-| `RATE_LIMITER_PORT`     | `4000`  | Host port for the rate-limiter service  |
-| `REDIS_PORT`            | `6379`  | Host port for Redis                     |
-| `INSERT_MAX_REQUESTS`   | `5`     | Max requests for `/payments/insert`     |
-| `INSERT_WINDOW_SECONDS` | `60`    | Window size (seconds) for insert        |
-| `GET_MAX_REQUESTS`      | `10`    | Max requests for `/payments/get`        |
-| `GET_WINDOW_SECONDS`    | `60`    | Window size (seconds) for fetching      |
+| Variable | Valor por defecto | Descripción |
+| -------- | ----------------- | ----------- |
+| `BACKEND_PORT` | `3000` | Puerto expuesto del backend |
+| `RATE_LIMITER_PORT` | `4000` | Puerto expuesto del rate limiter |
+| `REDIS_PORT` | `6379` | Puerto expuesto de Redis |
+| `INSERT_MAX_REQUESTS` | `5` | Máximo de requests para operaciones de insert |
+| `INSERT_WINDOW_SECONDS` | `60` | Tamaño de la ventana para insert |
+| `GET_MAX_REQUESTS` | `10` | Máximo de requests para operaciones de get |
+| `GET_WINDOW_SECONDS` | `60` | Tamaño de la ventana para get |
 
-## Example Requests
+## Ejemplos de requests
 
-**Insert a payment:**
+### Crear un pago
+
 ```bash
-curl -X POST http://localhost:4000/payments/insert \
+curl -X POST "http://localhost:4000/payments?userId=user-123" \
   -H "Content-Type: application/json" \
-  -d '{"userId": "user-123", "amount": 100, "currency": "ARS"}'
+  -d '{"amount": 100, "currency": "ARS"}'
 ```
 
-**Get payments:**
+### Obtener pagos
+
 ```bash
-curl --location --request GET 'http://localhost:4000/payments/get' \
---header 'Content-Type: application/json' \
-  --data '{
-    "userId": "user-123"
-  }'
+curl "http://localhost:4000/payments?userId=user-123"
 ```

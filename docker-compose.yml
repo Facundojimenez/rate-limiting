@@ -12,9 +12,9 @@ services:
       dockerfile: Dockerfile.dev
     container_name: backend
     ports:
-      - "${BACKEND_PORT:-3000}:3000"
+      - "${BACKEND_PORT:-3000}:${BACKEND_PORT:-3000}"
     environment:
-      - PORT=3000
+      - PORT=${BACKEND_PORT:-3000}
       - NODE_ENV=development
     volumes:
       - ./packages/backend/src:/app/src
@@ -28,12 +28,12 @@ services:
       dockerfile: Dockerfile.dev
     container_name: rate-limiter
     ports:
-      - "${RATE_LIMITER_PORT:-4000}:4000"
+      - "${RATE_LIMITER_PORT:-4000}:${RATE_LIMITER_PORT:-4000}"
     environment:
-      - PORT=4000
+      - PORT=${RATE_LIMITER_PORT:-4000}
       - REDIS_HOST=redis
-      - REDIS_PORT=6379
-      - BACKEND_URL=http://backend:3000
+      - REDIS_PORT=${REDIS_PORT:-6379}
+      - BACKEND_URL=http://backend:${BACKEND_PORT:-3000}
       - INSERT_MAX_REQUESTS=${INSERT_MAX_REQUESTS:-5}
       - INSERT_WINDOW_SECONDS=${INSERT_WINDOW_SECONDS:-60}
       - GET_MAX_REQUESTS=${GET_MAX_REQUESTS:-10}

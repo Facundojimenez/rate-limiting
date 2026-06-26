@@ -1,9 +1,9 @@
 import express from 'express';
-import proxyRoutes from './routes/proxy.routes';
+import paymentRoutes from './routes/payments.routes';
 
 const app = express();
 
 app.use(express.json());
-app.use('/', proxyRoutes);
+app.use(paymentRoutes);
 
 export default app;

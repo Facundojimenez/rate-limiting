@@ -1,0 +1,107 @@
+# =============================================================================
+# docker-compose.e2e.yml
+# Levanta el stack completo con límites reducidos para testing E2E
+# y ejecuta los escenarios de Artillery automáticamente.
+#
+# Uso:
+#   docker-compose -f docker-compose.e2e.yml up --build --abort-on-container-exit --exit-code-from artillery
+#
+# El flag --abort-on-container-exit hace que todos los servicios se detengan
+# cuando el contenedor de artillery termina (con o sin errores).
+# =============================================================================
+
+services:
+
+  redis:
+    image: redis:7-alpine
+    container_name: redis_e2e
+    restart: "no"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+
+  backend:
+    build:
+      context: ./packages/backend
+      dockerfile: Dockerfile.dev
+    container_name: backend_e2e
+    environment:
+      - PORT=${BACKEND_PORT:-3000}
+      - NODE_ENV=test
+    depends_on:
+      redis:
+        condition: service_healthy
+    command: npm run dev:watch
+    restart: "no"
+    healthcheck:
+      # Usa el módulo http de Node.js para no depender de curl/wget en la imagen
+      test:
+        [
+          "CMD-SHELL",
+          "node -e \"require('http').get('http://localhost:${BACKEND_PORT:-3000}/health', r => { process.exit(r.statusCode === 200 ? 0 : 1) }).on('error', () => process.exit(1))\"",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 15s
+
+  rate-limiter:
+    build:
+      context: ./packages/rate-limiter
+      dockerfile: Dockerfile.dev
+    container_name: rate-limiter_e2e
+    environment:
+      - PORT=${RATE_LIMITER_PORT:-4000}
+      - REDIS_HOST=redis
+      - REDIS_PORT=${REDIS_PORT:-6379}
+      - BACKEND_URL=http://backend:${BACKEND_PORT:-3000}
+      # Límites reducidos para que los tests corran más rápido
+      - INSERT_MAX_REQUESTS=3
+      - INSERT_WINDOW_SECONDS=10
+      - GET_MAX_REQUESTS=5
+      - GET_WINDOW_SECONDS=10
+    depends_on:
+      redis:
+        condition: service_healthy
+      backend:
+        condition: service_healthy
+    command: npm run dev:watch
+    restart: "no"
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "node -e \"require('http').get('http://localhost:${RATE_LIMITER_PORT:-4000}/payments/get', r => { process.exit(r.statusCode !== 500 ? 0 : 1) }).on('error', () => process.exit(1))\"",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 15s
+
+  artillery:
+    # Imagen propia: Node.js Alpine + Artillery instalado globalmente
+    build:
+      context: ./e2e
+      dockerfile: Dockerfile
+    container_name: artillery_e2e
+    command: ["/bin/sh", "/e2e/run-tests.sh"]
+    volumes:
+      - ./e2e:/e2e:ro
+    environment:
+      # Usa localhost porque el contenedor comparte la red del rate-limiter
+      # (network_mode: service:rate-limiter)
+      - TARGET=http://localhost:${RATE_LIMITER_PORT:-4000}
+      # Deben coincidir con INSERT_MAX_REQUESTS y GET_MAX_REQUESTS de arriba
+      - GET_MAX=5
+      - POST_MAX=3
+      - WINDOW_SECONDS=10
+    # Comparte el stack de red del rate-limiter:
+    # "localhost:4000" dentro del contenedor artillery = puerto 4000 del rate-limiter
+    network_mode: "service:rate-limiter"
+    depends_on:
+      rate-limiter:
+        condition: service_healthy
+    restart: "no"

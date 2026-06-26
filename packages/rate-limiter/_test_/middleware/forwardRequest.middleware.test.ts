@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
+import { afterEach, describe, expect, it, jest } from '@jest/globals';
 import { StatusCodes } from 'http-status-codes';
 import axios, { AxiosError } from 'axios';
 import forwardRequest from '../../src/middleware/forwardRequest.middleware';
@@ -13,13 +14,13 @@ const buildReq = (overrides: Partial<Request> = {}): Request =>
 
 const buildRes = (): Response => {
   const res = {} as Response;
-  res.status = jest.fn().mockReturnValue(res);
-  res.json = jest.fn().mockReturnValue(res);
+  res.status = jest.fn().mockReturnValue(res) as unknown as any;
+  res.json = jest.fn().mockReturnValue(res) as unknown as any;
   return res;
 };
 
 describe('forwardRequest middleware', () => {
-  afterEach(() => jest.clearAllMocks());
+  afterEach(async () => jest.clearAllMocks());
 
   it('forwards the request and responds with the backend status and data', async () => {
     const backendData = [{ paymentId: 'p1' }];

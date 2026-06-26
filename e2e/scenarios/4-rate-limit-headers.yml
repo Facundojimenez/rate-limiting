@@ -1,0 +1,21 @@
+config:
+  target: "{{ $env.TARGET }}"
+  plugins:
+    expect: {}
+  processor: "../processor.js"
+  phases:
+    - name: "rate-limit-headers"
+      duration: 5
+      arrivalCount: 1
+
+scenarios:
+  # Caso: Verificar que los headers X-RateLimit-* estén presentes en toda respuesta
+  # El middleware debe incluir X-RateLimit-Limit, X-RateLimit-Remaining y X-RateLimit-Window
+  # userId se pasa como query param (GET no puede tener body)
+  - name: "Verificar headers de rate limit en GET"
+    flow:
+      - get:
+          url: "/rate-limited-payments?userId=headers-test-get-user"
+          afterResponse: "validateRateLimitHeaders"
+          expect:
+            - statusCode: 200

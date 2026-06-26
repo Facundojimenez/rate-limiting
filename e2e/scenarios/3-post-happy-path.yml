@@ -1,0 +1,24 @@
+config:
+  target: "{{ $env.TARGET }}"
+  plugins:
+    expect: {}
+  phases:
+    - name: "post-happy-path"
+      duration: 10
+      arrivalCount: 1  # Un único VU que hace requests secuenciales
+
+scenarios:
+  # Caso: POST con userId válido, dentro del límite → 201 Created
+  # Con POST_MAX=3 en e2e, enviamos 2 requests (dentro del límite)
+  - name: "POST dentro del límite → 201 Created"
+    flow:
+      - loop:
+          - post:
+              url: "/rate-limited-payments?userId=happy-post-user"
+              json:
+                amount: 150
+                currency: "ARS"
+              expect:
+                - statusCode: 201
+                - contentType: json
+        count: 2

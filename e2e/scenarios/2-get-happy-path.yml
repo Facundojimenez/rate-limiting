@@ -1,0 +1,24 @@
+config:
+  target: "{{ $env.TARGET }}"
+  plugins:
+    expect: {}
+  phases:
+    - name: "get-happy-path"
+      duration: 10
+      arrivalCount: 1  # Un único VU que hace requests secuenciales
+
+scenarios:
+  # Caso: GET con userId válido vía query param, dentro del límite → 200 OK
+  # GET no puede tener body (Artillery usa 'got' que lo rechaza),
+  # por eso userId se pasa como query param: /payments/get?userId=...
+  # El middleware acepta userId desde body O desde query params.
+  # Con GET_MAX=5 en e2e, enviamos 3 requests (dentro del límite)
+  - name: "GET dentro del límite → 200 OK"
+    flow:
+      - loop:
+          - get:
+              url: "/rate-limited-payments?userId=happy-get-user"
+              expect:
+                - statusCode: 200
+                - contentType: json
+        count: 3

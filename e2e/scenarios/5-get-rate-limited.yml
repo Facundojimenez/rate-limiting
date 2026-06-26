@@ -1,0 +1,28 @@
+config:
+  target: "{{ $env.TARGET }}"
+  plugins:
+    expect: {}
+  processor: "../processor.js"
+  phases:
+    - name: "get-rate-limited"
+      duration: 15
+      arrivalCount: 1  # Un único VU ejecuta el flujo completo de forma secuencial
+
+scenarios:
+  # Caso: GET excede el límite de rate → los primeros GET_MAX requests son 200, los siguientes son 429
+  # userId se pasa como query param (GET no puede tener body en Artillery/got)
+  # Con GET_MAX=5 en e2e: requests 1-5 → 200, requests 6-7 → 429
+  - name: "GET excede el límite → 429 Too Many Requests"
+    flow:
+      # Inicializa userId único y contador para este test
+      - function: "initGetRateLimitTest"
+      # Loop: 7 requests al mismo userId
+      # Los primeros 5 deben retornar 200, los últimos 2 deben retornar 429
+      - loop:
+          - function: "incrementRequestCount"
+          - get:
+              url: "/rate-limited-payments"
+              qs:
+                userId: "{{ rateLimitUserId }}"
+              afterResponse: "validateGetRateLimitResponse"
+        count: 7
