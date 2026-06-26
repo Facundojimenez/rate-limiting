@@ -9,7 +9,7 @@ services:
   backend:
     build:
       context: ./packages/backend
-      dockerfile: Dockerfile.dev
+      dockerfile: Dockerfile
     container_name: backend
     ports:
       - "${BACKEND_PORT:-3000}:${BACKEND_PORT:-3000}"
@@ -25,7 +25,7 @@ services:
   rate-limiter:
     build:
       context: ./packages/rate-limiter
-      dockerfile: Dockerfile.dev
+      dockerfile: Dockerfile
     container_name: rate-limiter
     ports:
       - "${RATE_LIMITER_PORT:-4000}:${RATE_LIMITER_PORT:-4000}"

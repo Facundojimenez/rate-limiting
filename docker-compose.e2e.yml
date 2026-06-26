@@ -26,7 +26,7 @@ services:
   backend:
     build:
       context: ./packages/backend
-      dockerfile: Dockerfile.dev
+      dockerfile: Dockerfile
     container_name: backend_e2e
     environment:
       - PORT=${BACKEND_PORT:-3000}
@@ -51,7 +51,7 @@ services:
   rate-limiter:
     build:
       context: ./packages/rate-limiter
-      dockerfile: Dockerfile.dev
+      dockerfile: Dockerfile
     container_name: rate-limiter_e2e
     environment:
       - PORT=${RATE_LIMITER_PORT:-4000}
