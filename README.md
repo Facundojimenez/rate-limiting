@@ -32,8 +32,8 @@ El rate limiter expone las mismas rutas y aplica los límites antes de redirigir
 
 | Ruta | Límite por defecto |
 | ---- | ------------------ |
-| `POST /payments` | 5 requests por 60s por usuario |
-| `GET /payments` | 10 requests por 60s por usuario |
+| `POST /rate-limited-payments` | 5 requests por 60s por usuario |
+| `GET /rate-limited-payments` | 10 requests por 60s por usuario |
 
 En este ejemplo, el `userId` se toma desde los query params, por ejemplo `?userId=user-123`. En un sistema real, eso debería venir de un JWT o de la sesión del usuario.
 
@@ -97,7 +97,7 @@ El stack lee la configuración desde el archivo `.env` de la raíz. Las principa
 ### Crear un pago
 
 ```bash
-curl -X POST "http://localhost:4000/payments?userId=user-123" \
+curl -X POST "http://localhost:4000/rate-limited-payments?userId=user-123" \
   -H "Content-Type: application/json" \
   -d '{"amount": 100, "currency": "ARS"}'
 ```
@@ -105,5 +105,5 @@ curl -X POST "http://localhost:4000/payments?userId=user-123" \
 ### Obtener pagos
 
 ```bash
-curl "http://localhost:4000/payments?userId=user-123"
+curl "http://localhost:4000/rate-limited-payments?userId=user-123"
 ```

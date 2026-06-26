@@ -47,7 +47,7 @@ describe('rateLimiter middleware', () => {
     const res = buildRes();
     const next: NextFunction = jest.fn();
 
-    await rateLimiter('payments/insert')(req, res, next);
+    await rateLimiter('rate-limited-payments/insert')(req, res, next);
 
     expect(res.status).toHaveBeenCalledWith(StatusCodes.BAD_REQUEST);
     expect(res.json).toHaveBeenCalledWith({ error: 'userId is required in the query params' });
@@ -60,7 +60,7 @@ describe('rateLimiter middleware', () => {
     const res = buildRes();
     const next: NextFunction = jest.fn();
 
-    await rateLimiter('payments/insert')(req, res, next);
+    await rateLimiter('rate-limited-payments/insert')(req, res, next);
 
     expect(next).toHaveBeenCalled();
     expect(res.setHeader).toHaveBeenCalledWith('X-RateLimit-Remaining', 4);
@@ -72,7 +72,7 @@ describe('rateLimiter middleware', () => {
     const res = buildRes();
     const next: NextFunction = jest.fn();
 
-    await rateLimiter('payments/insert')(req, res, next);
+    await rateLimiter('rate-limited-payments/insert')(req, res, next);
 
     expect(res.status).toHaveBeenCalledWith(StatusCodes.TOO_MANY_REQUESTS);
     expect(res.json).toHaveBeenCalledWith(
@@ -87,7 +87,7 @@ describe('rateLimiter middleware', () => {
     const res = buildRes();
     const next: NextFunction = jest.fn();
 
-    await rateLimiter('payments/get')(req, res, next);
+    await rateLimiter('rate-limited-payments/get')(req, res, next);
 
     expect(res.setHeader).toHaveBeenCalledWith('X-RateLimit-Limit', expect.any(Number));
     expect(res.setHeader).toHaveBeenCalledWith('X-RateLimit-Remaining', 9);
@@ -100,7 +100,7 @@ describe('rateLimiter middleware', () => {
     const res = buildRes();
     const next: NextFunction = jest.fn();
 
-    await rateLimiter('payments/insert')(req, res, next);
+    await rateLimiter('rate-limited-payments/insert')(req, res, next);
 
     expect(mockCheckRateLimit).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -118,7 +118,7 @@ describe('rateLimiter middleware', () => {
     const res = buildRes();
     const next: NextFunction = jest.fn();
 
-    await rateLimiter('payments/insert')(req, res, next);
+    await rateLimiter('rate-limited-payments/insert')(req, res, next);
 
     expect(mockLogger.warning).toHaveBeenCalledWith(expect.stringContaining('Rate limit exceeded'));
   });

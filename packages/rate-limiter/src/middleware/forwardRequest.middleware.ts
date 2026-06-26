@@ -12,11 +12,10 @@ const BACKEND_UNAVAILABLE_RESPONSE = {
 const forwardRequest = (path: string): RequestHandler => {
   return async (req: Request, res: Response): Promise<void> => {
     try {
-      const targetUrl = `${BACKEND_URL}${req.originalUrl}`;
 
       const response = await axios({
         method: req.method,
-        url: targetUrl,
+        url: `${BACKEND_URL}${path}`,
         data: req.body,
         headers: { 'Content-Type': 'application/json' },
       });

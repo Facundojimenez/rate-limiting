@@ -9,6 +9,7 @@ const rateLimiter = (resourceKey: string): RequestHandler => {
     const middlewareStartTime = Date.now();
     const rule = rateLimitRules[resourceKey];
 
+    // Si no hay una regla de limitación de velocidad para el recurso, simplemente se permite la solicitud.
     if (!rule) {
       next();
       return;
@@ -24,6 +25,7 @@ const rateLimiter = (resourceKey: string): RequestHandler => {
 
     logger.info(`[MIDDLEWARE] START - userId: ${userId}, resource: ${rule.resource}, method: ${rule.httpMethod}`);
 
+    // Se verifica en Redis si el usuario ha excedido el límite de solicitudes para el recurso y método HTTP especificado.
     const { allowed, remaining } = await checkRateLimit({
       userId,
       resource: rule.resource,

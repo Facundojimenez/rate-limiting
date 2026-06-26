@@ -4,6 +4,6 @@ import paymentRoutes from './routes/payments.routes';
 const app = express();
 
 app.use(express.json());
-app.use(paymentRoutes);
+app.use('/rate-limited-payments', paymentRoutes);
 
 export default app;

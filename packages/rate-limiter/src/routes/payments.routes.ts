@@ -4,7 +4,7 @@ import forwardRequest from '../middleware/forwardRequest.middleware';
 
 const router = Router();
 
-router.post('/', rateLimiter('payments/insert'), forwardRequest('/payments'));
-router.get('/', rateLimiter('payments/get'), forwardRequest('/payments'));
+router.post('/', rateLimiter('rate-limited-payments/insert'), forwardRequest('/payments'));
+router.get('/', rateLimiter('rate-limited-payments/get'), forwardRequest('/payments'));
 
 export default router;
