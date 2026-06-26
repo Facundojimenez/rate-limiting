@@ -1,6 +1,5 @@
 import log4js from 'log4js';
 
-// Custom layout para Argentina timezone
 log4js.addLayout('custom-tz', () => {
   return (loggingEvent) => {
     const date = new Date(loggingEvent.startTime);

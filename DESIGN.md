@@ -48,6 +48,14 @@ Además, este diseño asume que el usuario está autenticado y que existe un use
 
 También decidí usar Docker Compose porque quería que este proyecto, que tiene varios componentes, pudiera levantarse de forma sencilla en cualquier computadora. La idea fue que no fuera necesario instalar y configurar cada pieza a mano, y que con un solo comando se pudiera tener el backend, el rate limiter, Redis y la parte de testing funcionando de forma coherente.
 
+## Uso de IA durante el desarrollo
+
+Dado el tiempo limitado, me apoyé en herramientas de programación asistida que tenía integradas en el IDE. En particular usé Cline, que me permitió trabajar con distintos modelos y ajustar el costo según la tarea. Para las partes más complejas, como el diseño inicial y la estructura general del proyecto, usé Claude Sonnet 4.6; para tareas más repetitivas o más simples, como tests unitarios y ajustes de configuración, opté por Claude Haiku 4.5 porque suele ser suficiente y más económico.
+
+La forma en que lo usé fue bastante práctica: le explicaba la consigna, le dejaba claro el tipo de arquitectura que buscaba y le daba una guía concreta sobre lo que necesitaba. Después revisaba el resultado, corregía lo que no me convencía y le iba agregando nuevas mejoras a medida que surgían, como las pruebas E2E o el manejo de logs en módulos separados. También me ayudó mucho con tareas más tediosas, como YAML, README y tests, donde la IA puede ahorrar bastante tiempo sin bajar la calidad del trabajo.
+
+Creo que lo más importante es no delegar el criterio. La IA fue una ayuda muy útil para acelerar el proceso y evitar bloqueos, pero la revisión final, la decisión de arquitectura y la validación del resultado siguieron siendo mías.
+
 ## Conclusión
 
 En general, este desafío me sirvió para trabajar con una arquitectura un poco más completa de la que normalmente uso en ejercicios simples. Me permitió pensar en rendimiento, separación de responsabilidades, límites de tráfico y cómo estructurar un sistema para que sea fácil de probar y extender.
